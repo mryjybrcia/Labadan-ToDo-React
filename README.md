@@ -9,4 +9,4 @@ Currently, two official plugins are available:
 
 # Task-Management-Application
 
-This is a mockup capstone project for KodeGo Bootcamp
+
