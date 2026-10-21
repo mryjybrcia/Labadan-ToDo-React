@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
-import crossIcon from "../assets/icon-cross.svg";
+import CrossIcon from "../components/icons/CrossIcon";
+import { useEscape } from "../Hooks/useShortcuts";
 import boardSlice from "../redux/boardSlice";
 
 function AddEditTaskModal({
@@ -47,13 +48,9 @@ function AddEditTaskModal({
 
   const validate = () => {
     setIsValid(false);
-    if (!title.trim()) {
-      return false;
-    }
+    if (!title.trim()) return false;
     for (let i = 0; i < subtasks.length; i++) {
-      if (!subtasks[i].title.trim()) {
-        return false;
-      }
+      if (!subtasks[i].title.trim()) return false;
     }
     setIsValid(true);
     return true;
@@ -61,9 +58,7 @@ function AddEditTaskModal({
 
   if (type === "edit" && isFirstLoad) {
     setSubtasks(
-      task.subtasks.map((subtask) => {
-        return { ...subtask, id: uuidv4() };
-      })
+      task.subtasks.map((subtask) => ({ ...subtask, id: uuidv4() }))
     );
     setTitle(task.title);
     setDescription(task.description);
@@ -100,129 +95,134 @@ function AddEditTaskModal({
     }
   };
 
+  useEscape(() => setIsAddTaskModalOpen(false));
+
+  const titleInvalid = !isValid && !title.trim();
+
   return (
     <div
-      className={
-        device === "mobile"
-          ? "  py-6 px-6 pb-40  absolute overflow-y-scroll  left-0 flex  right-0 bottom-[-100vh] top-0 dropdown "
-          : "  py-6 px-6 pb-40  absolute overflow-y-scroll  left-0 flex  right-0 bottom-0 top-0 dropdown "
-      }
+      className="scrim"
       onClick={(e) => {
-        if (e.target !== e.currentTarget) {
-          return;
-        }
+        if (e.target !== e.currentTarget) return;
         setIsAddTaskModalOpen(false);
       }}
     >
-      {/* Modal Section */}
+      <div role="dialog" aria-modal="true" className="panel my-auto">
+        <h2 className="text-title font-semibold text-fg">
+          {type === "edit" ? "Edit task" : "New task"}
+        </h2>
 
-      <div
-        className=" scrollbar-hide overflow-y-scroll max-h-[95vh]  my-auto  bg-white dark:bg-[#2b2c37] text-black dark:text-white font-bold
-       shadow-md shadow-[#364e7e1a] max-w-md mx-auto  w-full px-8  py-8 rounded-xl"
-      >
-        <h3 className=" text-lg ">
-          {type === "edit" ? "Edit" : "Add New"} Task
-        </h3>
-
-        {/* Task Name */}
-
-        <div className="mt-8 flex flex-col space-y-1">
-          <label className="  text-sm dark:text-white text-gray-500">
-            Task Name
+        <div className="mt-4">
+          <label htmlFor="task-name-input" className="text-micro font-semibold text-dimmer">
+            Title
           </label>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             id="task-name-input"
             type="text"
-            className=" bg-transparent  px-4 py-2 outline-none focus:border-0 rounded-md text-sm  border-[0.5px] border-gray-600 focus:outline-[#635fc7] outline-1  ring-0  "
-            placeholder=" e.g Take coffee break"
+            className={`field mt-1 ${titleInvalid ? "field-invalid" : ""}`}
+            placeholder="e.g. Take a coffee break"
+            aria-invalid={titleInvalid}
           />
+          {titleInvalid && (
+            <p className="mt-1 text-micro text-danger">Give the task a title.</p>
+          )}
         </div>
 
-        {/* Description */}
-        <div className="mt-8 flex flex-col space-y-1">
-          <label className="  text-sm dark:text-white text-gray-500">
+        <div className="mt-4">
+          <label htmlFor="task-description-input" className="text-micro font-semibold text-dimmer">
             Description
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             id="task-description-input"
-            className=" bg-transparent outline-none min-h-[200px] focus:border-0 px-4 py-2 rounded-md text-sm  border-[0.5px] border-gray-600 focus:outline-[#635fc7] outline-[1px] "
-            placeholder="e.g. It's always good to take a break. This 
-            15 minute break will  recharge the batteries 
-            a little."
+            className="field mt-1 min-h-[76px] resize-y leading-relaxed"
+            placeholder="What does done look like?"
           />
         </div>
 
-        {/* Subtasks */}
-
-        <div className="mt-8 flex flex-col space-y-3">
-          <label className="  text-sm dark:text-white text-gray-500">
-            Subtasks
-          </label>
-
-          {subtasks.map((subtask, index) => (
-            <div key={index} className=" flex items-center w-full ">
-              <input
-                onChange={(e) => {
-                  onChangeSubtasks(subtask.id, e.target.value);
-                }}
-                type="text"
-                value={subtask.title}
-                className=" bg-transparent outline-none focus:border-0 flex-grow px-4 py-2 rounded-md text-sm  border-[0.5px] border-gray-600 focus:outline-[#635fc7] outline-[1px]  "
-                placeholder=" e.g Take coffee break"
-              />
-              <img
-                src={crossIcon}
-                onClick={() => {
-                  onDelete(subtask.id);
-                }}
-                className=" m-4 cursor-pointer "
-              />
-            </div>
-          ))}
+        <div className="mt-4">
+          <span className="text-micro font-semibold text-dimmer">Subtasks</span>
+          <div className="mt-1 space-y-1.5">
+            {subtasks.map((subtask, index) => {
+              const invalid = !isValid && !subtask.title.trim();
+              return (
+                <div key={index} className="flex items-center gap-1.5">
+                  <input
+                    onChange={(e) => onChangeSubtasks(subtask.id, e.target.value)}
+                    type="text"
+                    value={subtask.title}
+                    className={`field ${invalid ? "field-invalid" : ""}`}
+                    placeholder="e.g. Make coffee"
+                    aria-label={`Subtask ${index + 1}`}
+                    aria-invalid={invalid}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onDelete(subtask.id)}
+                    aria-label={`Remove subtask ${subtask.title || index + 1}`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-soft text-dimmer
+                               transition-colors duration-150 hover:bg-danger/10 hover:text-danger"
+                  >
+                    <CrossIcon className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
 
           <button
-            className=" w-full items-center dark:text-[#635fc7] dark:bg-white  text-white bg-[#635fc7] py-2 rounded-full "
-            onClick={() => {
+            type="button"
+            className="btn-quiet mt-2 w-full"
+            onClick={() =>
               setSubtasks((state) => [
                 ...state,
                 { title: "", isCompleted: false, id: uuidv4() },
-              ]);
-            }}
+              ])
+            }
           >
-            + Add New Subtask
+            Add subtask
           </button>
         </div>
 
-        {/* current Status  */}
-        <div className="mt-8 flex flex-col space-y-3">
-          <label className="  text-sm dark:text-white text-gray-500">
-            Current Status
+        <div className="mt-4">
+          <label htmlFor="task-status-input" className="text-micro font-semibold text-dimmer">
+            Status
           </label>
           <select
+            id="task-status-input"
             value={status}
             onChange={onChangeStatus}
-            className=" select-status flex-grow px-4 py-2 rounded-md text-sm bg-transparent focus:border-0  border-[1px] border-gray-300 focus:outline-[#635fc7] outline-none"
+            className="field select-chevron mt-1 cursor-pointer"
           >
             {columns.map((column, index) => (
               <option key={index}>{column.name}</option>
             ))}
           </select>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
           <button
+            type="button"
+            className="btn-quiet btn-lg"
+            onClick={() => setIsAddTaskModalOpen(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
             onClick={() => {
-              const isValid = validate();
-              if (isValid) {
+              if (validate()) {
                 onSubmit(type);
                 setIsAddTaskModalOpen(false);
                 type === "edit" && setIsTaskModalOpen(false);
               }
             }}
-            className=" w-full items-center text-white bg-[#635fc7] py-2 rounded-full "
+            className="btn-primary btn-lg"
           >
-            {type === "edit" ? " save edit" : "Create task"}
+            {type === "edit" ? "Save changes" : "Create task"}
           </button>
         </div>
       </div>

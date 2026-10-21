@@ -11,24 +11,26 @@ function Subtask({ index, taskIndex, colIndex }) {
   const subtask = task.subtasks.find((subtask, i) => i === index);
   const checked = subtask.isCompleted;
 
-  const onChange = (e) => {
+  const onChange = () => {
     dispatch(
       boardSlice.actions.setSubtaskCompleted({ index, taskIndex, colIndex })
     );
   };
 
   return (
-    <div className=" w-full flex hover:bg-[#635fc740] dark:hover:bg-[#635fc740] rounded-md relative items-center justify-start dark:bg-[#20212c]  p-3 gap-4  bg-[#f4f7fd]">
+    <label className="flex w-full cursor-pointer items-center gap-2.5 border-b border-hairline py-2 transition-colors duration-150 last:border-b-0 hover:bg-raised">
       <input
-        className=" w-4 h-4  accent-[#635fc7] cursor-pointer "
+        className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-accent"
         type="checkbox"
         checked={checked}
         onChange={onChange}
       />
-      <span className={checked && " line-through opacity-30 "}>
+      <span
+        className={`text-body ${checked ? "text-dimmer line-through" : "text-fg"}`}
+      >
         {subtask.title}
       </span>
-    </div>
+    </label>
   );
 }
 

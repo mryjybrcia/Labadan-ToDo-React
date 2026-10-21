@@ -1,36 +1,20 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { shuffle } from "lodash";
 import boardSlice from "../redux/boardSlice";
 import Task from "./Task";
 
 function Column({ colIndex }) {
-  const colors = [
-    "bg-red-500",
-    "bg-orange-500",
-    "bg-blue-500",
-    "bg-purple-500",
-    "bg-green-500",
-    "bg-indigo-500",
-    "bg-yellow-500",
-    "bg-pink-500",
-    "bg-sky-500",
-  ];
-
   const dispatch = useDispatch();
-  const [color, setColor] = useState(null);
+  const [isDropTarget, setIsDropTarget] = useState(false);
   const boards = useSelector((state) => state.boards);
   const board = boards.find((board) => board.isActive === true);
   const col = board.columns.find((col, i) => i === colIndex);
-  useEffect(() => {
-    setColor(shuffle(colors).pop());
-  }, [dispatch]);
 
   const handleOnDrop = (e) => {
+    setIsDropTarget(false);
     const { prevColIndex, taskIndex } = JSON.parse(
       e.dataTransfer.getData("text")
     );
-
     if (colIndex !== prevColIndex) {
       dispatch(
         boardSlice.actions.dragTask({ colIndex, prevColIndex, taskIndex })
@@ -40,23 +24,45 @@ function Column({ colIndex }) {
 
   const handleOnDragOver = (e) => {
     e.preventDefault();
+    setIsDropTarget(true);
+  };
+
+  const handleOnDragLeave = (e) => {
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDropTarget(false);
   };
 
   return (
-    <div
+    <section
       onDrop={handleOnDrop}
       onDragOver={handleOnDragOver}
-      className="scrollbar-hide   mx-5 pt-[90px] min-w-[280px] "
+      onDragLeave={handleOnDragLeave}
+      aria-label={`${col.name}, ${col.tasks.length} tasks`}
+      className={`flex h-full w-rail shrink-0 flex-col border-r border-hairline
+                  transition-colors duration-150
+                  ${isDropTarget ? "bg-accent/[0.07]" : ""}`}
     >
-      <span className=" font-semibold flex  items-center  gap-2 tracking-widest md:tracking-[.2em] text-[#828fa3]">
-        <div className={`rounded-full w-4 h-4 ${color} `} />
-        {col.name} ({col.tasks.length})
-      </span>
+      <header className="sticky top-0 z-10 flex items-baseline gap-2 border-b border-hairline bg-canvas px-3 py-2.5">
+        <h2 className="truncate text-label font-semibold text-fg">
+          {col.name}
+        </h2>
+        <span className="tnum ml-auto shrink-0 text-micro text-dim">
+          {col.tasks.length}
+        </span>
+      </header>
 
-      {col.tasks.map((task, index) => (
-        <Task key={index} taskIndex={index} colIndex={colIndex} />
-      ))}
-    </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {col.tasks.map((task, index) => (
+          <Task key={index} taskIndex={index} colIndex={colIndex} />
+        ))}
+
+        {col.tasks.length === 0 && (
+          <p className="px-3 py-6 text-label text-dimmer">
+            {isDropTarget ? "Release to move here" : "Nothing here yet"}
+          </p>
+        )}
+      </div>
+    </section>
   );
 }
 

@@ -3,21 +3,25 @@ import AddEditBoardModal from "../modals/AddEditBoardModal";
 
 function EmptyBoard({ type }) {
   const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
+  const isEdit = type === "edit";
+
   return (
-    <div className=" bg-white dark:bg-[#2b2c37] h-screen w-screen flex flex-col  items-center justify-center">
-      <h3 className=" text-gray-500 font-bold">
-        {type === "edit"
-          ? "This board is empty. Create a new column to get started."
-          : "There are no boards available. Create a new board to get started"}
-      </h3>
+    <div className="flex h-full w-full flex-col items-start justify-center px-8">
+      <h2 className="text-title font-semibold text-fg">
+        {isEdit ? "No columns yet" : "No boards yet"}
+      </h2>
+      <p className="mt-1.5 max-w-xs text-body text-dim">
+        {isEdit
+          ? "Columns are the stages work moves through. Add the first one."
+          : "A board holds the columns and tasks for one piece of work."}
+      </p>
       <button
-        onClick={() => {
-          setIsBoardModalOpen(true);
-        }}
-        className="w-full items-center max-w-xs font-bold hover:opacity-70 dark:text-white dark:bg-[#635fc7] mt-8 relative  text-white bg-[#635fc7] py-2 rounded-full"
+        onClick={() => setIsBoardModalOpen(true)}
+        className="btn-primary btn-lg mt-4"
       >
-        {type === "edit" ? "+ Add New Column" : "+ Add New Board"}
+        {isEdit ? "Add column" : "Create board"}
       </button>
+
       {isBoardModalOpen && (
         <AddEditBoardModal
           type={type}

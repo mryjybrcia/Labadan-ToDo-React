@@ -12,26 +12,25 @@ function App() {
   const activeBoard = boards.find((board) => board.isActive);
   if (!activeBoard && boards.length > 0)
     dispatch(boardSlice.actions.setBoardActive({ index: 0 }));
+
+  if (boards.length === 0) {
+    return (
+      <div className="h-screen">
+        <EmptyBoard type="add" />
+      </div>
+    );
+  }
+
   return (
-    <div className=" overflow-hidden  overflow-x-scroll">
-      <>
-        {boards.length > 0 ? (
-          <>
-            <Header
-              setIsBoardModalOpen={setIsBoardModalOpen}
-              isBoardModalOpen={isBoardModalOpen}
-            />
-            <Home
-              setIsBoardModalOpen={setIsBoardModalOpen}
-              isBoardModalOpen={isBoardModalOpen}
-            />
-          </>
-        ) : (
-          <>
-            <EmptyBoard type="add" />
-          </>
-        )}
-      </>
+    <div className="h-screen overflow-hidden">
+      <Header
+        setIsBoardModalOpen={setIsBoardModalOpen}
+        isBoardModalOpen={isBoardModalOpen}
+      />
+      <Home
+        setIsBoardModalOpen={setIsBoardModalOpen}
+        isBoardModalOpen={isBoardModalOpen}
+      />
     </div>
   );
 }

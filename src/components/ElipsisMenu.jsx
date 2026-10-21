@@ -1,33 +1,29 @@
 import React from "react";
 
 function ElipsisMenu({ type, setOpenEditModal, setOpenDeleteModal }) {
+  const label = type.toLowerCase();
   return (
     <div
-      className={
-        type === "Boards"
-          ? " absolute  top-16  right-5"
-          : " absolute  top-6  right-4"
-      }
+      role="menu"
+      className="absolute right-0 top-full z-50 mt-1.5 w-40 overflow-hidden rounded-soft
+                 border border-hairline bg-surface py-1"
     >
-      <div className=" flex justify-end items-center">
-        <div className=" w-40 text-sm z-50 font-medium shadow-md shadow-[#364e7e1a] bg-white dark:bg-[#20212c] space-y-4 py-5 px-4 rounded-lg  h-auto pr-12">
-          <span
-            onClick={() => {
-              setOpenEditModal();
-            }}
-            className=" cursor-pointer dark:text-gray-400 text-gray-700"
-          >
-            Edit {type}
-          </span>
-
-          <span
-            onClick={() => setOpenDeleteModal()}
-            className=" cursor-pointer text-red-500"
-          >
-            Delete {type}
-          </span>
-        </div>
-      </div>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => setOpenEditModal()}
+        className="w-full px-3 py-1.5 text-left text-label text-dim transition-colors duration-150 hover:bg-raised hover:text-fg"
+      >
+        Edit {label}
+      </button>
+      <button
+        type="button"
+        role="menuitem"
+        onClick={() => setOpenDeleteModal()}
+        className="w-full px-3 py-1.5 text-left text-label text-danger transition-colors duration-150 hover:bg-danger/10"
+      >
+        Delete {label}
+      </button>
     </div>
   );
 }

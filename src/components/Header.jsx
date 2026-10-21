@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import Logo from "../assets/logo-mobile.svg";
 import iconDown from "../assets/icon-chevron-down.svg";
@@ -10,6 +10,7 @@ import AddEditBoardModal from "../modals/AddEditBoardModal";
 import AddEditTaskModal from "../modals/AddEditTaskModal";
 import DeleteModal from "../modals/DeleteModal";
 import boardSlice from "../redux/boardSlice";
+import { useShortcuts } from "../Hooks/useShortcuts";
 
 function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -19,9 +20,24 @@ function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 
   const dispatch = useDispatch();
-
   const boards = useSelector((state) => state.boards);
   const board = boards.find((board) => board.isActive);
+
+  const anyOverlayOpen =
+    isTaskModalOpen || isBoardModalOpen || isDeleteModalOpen || openDropdown;
+
+  const onBoard = useCallback(
+    (index) => {
+      if (index < boards.length) {
+        dispatch(boardSlice.actions.setBoardActive({ index }));
+      }
+    },
+    [dispatch, boards.length]
+  );
+
+  const onNewTask = useCallback(() => setIsTaskModalOpen(true), []);
+
+  useShortcuts({ onBoard, onNewTask, enabled: !anyOverlayOpen });
 
   const onDropdownClick = () => {
     setOpenDropdown((state) => !state);
@@ -49,64 +65,64 @@ function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
   };
 
   return (
-    <div className=" p-4 fixed left-0 bg-white dark:bg-[#2b2c37] z-50 right-0 ">
-      <header className=" flex justify-between dark:text-white items-center  ">
-        {/* Left Side  */}
-        <div className=" flex items-center space-x-2  md:space-x-4">
-          <img src={Logo} alt=" Logo " className=" h-6 w-6" />
-          <h3 className=" md:text-4xl  hidden md:inline-block font-bold  font-sans">
-            Project Task
-          </h3>
-          <div className=" flex items-center ">
-            <h3 className=" truncate max-w-[200px] md:text-2xl text-xl font-bold md:ml-20 font-sans  ">
-              {board.name}
-            </h3>
-            <img
-              src={openDropdown ? iconUp : iconDown}
-              alt=" dropdown icon"
-              className=" w-3 ml-2 md:hidden"
-              onClick={onDropdownClick}
-            />
-          </div>
+    <div className="fixed inset-x-0 top-0 z-50 h-bar border-b border-hairline bg-surface">
+      <header className="flex h-full items-center gap-3 px-3">
+        <img src={Logo} alt="" className="h-4 w-4 shrink-0" />
+        <span className="hidden shrink-0 text-label font-semibold text-dim md:inline">
+          Project Task
+        </span>
+
+        <span className="hidden h-3.5 w-px shrink-0 bg-hairline md:block" />
+
+        <div className="flex min-w-0 items-center">
+          <h1 className="truncate text-title font-semibold text-fg">
+            {board.name}
+          </h1>
+          <button
+            type="button"
+            onClick={onDropdownClick}
+            aria-label="Switch board"
+            aria-expanded={openDropdown}
+            className="ml-1.5 rounded-sharp p-1 md:hidden"
+          >
+            <img src={openDropdown ? iconUp : iconDown} alt="" className="w-2.5" />
+          </button>
         </div>
 
-        {/* Right Side */}
-
-        <div className=" flex space-x-4 items-center md:space-x-6 ">
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
           <button
-            className=" button hidden md:block "
-            onClick={() => {
-              setIsTaskModalOpen((prevState) => !prevState);
-            }}
+            className="btn-primary"
+            onClick={() => setIsTaskModalOpen(true)}
           >
-            + Add New Task
-          </button>
-          <button
-            onClick={() => {
-              setIsTaskModalOpen((prevState) => !prevState);
-            }}
-            className=" button py-1 px-3 md:hidden "
-          >
-            +
+            <span className="hidden sm:inline">New task</span>
+            <span className="sm:hidden">+</span>
+            <kbd className="kbd ml-0.5 hidden border-accent-fg/30 text-accent-fg/70 sm:inline-flex">
+              N
+            </kbd>
           </button>
 
-          <img
-            onClick={() => {
-              setBoardType("edit");
-              setOpenDropdown(false);
-              setIsElipsisMenuOpen((prevState) => !prevState);
-            }}
-            src={elipsis}
-            alt="elipsis"
-            className=" cursor-pointer h-6"
-          />
-          {isElipsisMenuOpen && (
-            <ElipsisMenu
-              type="Boards"
-              setOpenEditModal={setOpenEditModal}
-              setOpenDeleteModal={setOpenDeleteModal}
-            />
-          )}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setBoardType("edit");
+                setOpenDropdown(false);
+                setIsElipsisMenuOpen((prevState) => !prevState);
+              }}
+              aria-label="Board options"
+              aria-expanded={isElipsisMenuOpen}
+              className="flex h-7 w-7 items-center justify-center rounded-soft transition-colors duration-150 hover:bg-raised"
+            >
+              <img src={elipsis} alt="" className="h-4 opacity-70" />
+            </button>
+            {isElipsisMenuOpen && (
+              <ElipsisMenu
+                type="Board"
+                setOpenEditModal={setOpenEditModal}
+                setOpenDeleteModal={setOpenDeleteModal}
+              />
+            )}
+          </div>
         </div>
 
         {openDropdown && (
@@ -116,6 +132,7 @@ function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
           />
         )}
       </header>
+
       {isTaskModalOpen && (
         <AddEditTaskModal
           setIsAddTaskModalOpen={setIsTaskModalOpen}

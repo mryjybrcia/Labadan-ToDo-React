@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
-import crossIcon from "../assets/icon-cross.svg";
+import CrossIcon from "../components/icons/CrossIcon";
 import boardSlice from "../redux/boardSlice";
+import { useEscape } from "../Hooks/useShortcuts";
 
 function AddEditBoardModal({ setIsBoardModalOpen, type }) {
   const dispatch = useDispatch();
@@ -13,29 +14,21 @@ function AddEditBoardModal({ setIsBoardModalOpen, type }) {
     { name: "Doing", tasks: [], id: uuidv4() },
   ]);
   const [isValid, setIsValid] = useState(true);
-  const board = useSelector((state) => state.boards).find(
-    (board) => board.isActive
-  );
+  const board = useSelector((state) => state.boards).find((b) => b.isActive);
+
+  useEscape(() => setIsBoardModalOpen(false));
 
   if (type === "edit" && isFirstLoad) {
-    setNewColumns(
-      board.columns.map((col) => {
-        return { ...col, id: uuidv4() };
-      })
-    );
+    setNewColumns(board.columns.map((col) => ({ ...col, id: uuidv4() })));
     setName(board.name);
     setIsFirstLoad(false);
   }
 
   const validate = () => {
     setIsValid(false);
-    if (!name.trim()) {
-      return false;
-    }
+    if (!name.trim()) return false;
     for (let i = 0; i < newColumns.length; i++) {
-      if (!newColumns[i].name.trim()) {
-        return false;
-      }
+      if (!newColumns[i].name.trim()) return false;
     }
     setIsValid(true);
     return true;
@@ -44,15 +37,13 @@ function AddEditBoardModal({ setIsBoardModalOpen, type }) {
   const onChange = (id, newValue) => {
     setNewColumns((prevState) => {
       const newState = [...prevState];
-      const column = newState.find((col) => col.id === id);
-      column.name = newValue;
+      newState.find((col) => col.id === id).name = newValue;
       return newState;
     });
   };
 
-  const onDelete = (id) => {
+  const onDelete = (id) =>
     setNewColumns((prevState) => prevState.filter((el) => el.id !== id));
-  };
 
   const onSubmit = (type) => {
     setIsBoardModalOpen(false);
@@ -63,87 +54,98 @@ function AddEditBoardModal({ setIsBoardModalOpen, type }) {
     }
   };
 
+  const nameInvalid = !isValid && !name.trim();
+
   return (
     <div
-      className="  fixed right-0 top-0 px-2 py-4 overflow-scroll scrollbar-hide  z-50 left-0 bottom-0 justify-center items-center flex dropdown "
+      className="scrim"
       onClick={(e) => {
-        if (e.target !== e.currentTarget) {
-          return;
-        }
+        if (e.target !== e.currentTarget) return;
         setIsBoardModalOpen(false);
       }}
     >
-      <div
-        className=" scrollbar-hide overflow-y-scroll max-h-[95vh]  bg-white dark:bg-[#2b2c37] text-black dark:text-white font-bold
-       shadow-md shadow-[#364e7e1a] max-w-md mx-auto my-auto w-full px-8  py-8 rounded-xl"
-      >
-        <h3 className=" text-lg ">
-          {type === "edit" ? "Edit" : "Add New"} Board
-        </h3>
+      <div role="dialog" aria-modal="true" className="panel my-auto">
+        <h2 className="text-title font-semibold text-fg">
+          {type === "edit" ? "Edit board" : "New board"}
+        </h2>
 
-        {/* Task Name */}
-
-        <div className="mt-8 flex flex-col space-y-1">
-          <label className="  text-sm dark:text-white text-gray-500">
-            Board Name
+        <div className="mt-4">
+          <label htmlFor="board-name-input" className="text-micro font-semibold text-dimmer">
+            Name
           </label>
           <input
-            className=" bg-transparent  px-4 py-2 rounded-md text-sm  border-[0.5px] border-gray-600 focus:outline-[#635fc7] outline-1  ring-0  "
-            placeholder=" e.g Web Design"
+            className={`field mt-1 ${nameInvalid ? "field-invalid" : ""}`}
+            placeholder="e.g. Platform launch"
             value={name}
             onChange={(e) => setName(e.target.value)}
             id="board-name-input"
+            aria-invalid={nameInvalid}
           />
+          {nameInvalid && (
+            <p className="mt-1 text-micro text-danger">Give the board a name.</p>
+          )}
         </div>
 
-        {/* Board Columns */}
-
-        <div className="mt-8 flex flex-col space-y-3">
-          <label className=" text-sm dark:text-white text-gray-500">
-            Board Columns
-          </label>
-
-          {newColumns.map((column, index) => (
-            <div key={index} className=" flex items-center w-full ">
-              <input
-                className=" bg-transparent flex-grow px-4 py-2 rounded-md text-sm  border-[0.5px] border-gray-600 focus:outline-[#635fc7] outline-[1px]  "
-                onChange={(e) => {
-                  onChange(column.id, e.target.value);
-                }}
-                type="text"
-                value={column.name}
-              />
-              <img
-                src={crossIcon}
-                onClick={() => {
-                  onDelete(column.id);
-                }}
-                className=" m-4 cursor-pointer "
-              />
-            </div>
-          ))}
-          <div>
-            <button
-              className=" w-full items-center hover:opacity-70 dark:text-[#635fc7] dark:bg-white  text-white bg-[#635fc7] py-2 rounded-full "
-              onClick={() => {
-                setNewColumns((state) => [
-                  ...state,
-                  { name: "", tasks: [], id: uuidv4() },
-                ]);
-              }}
-            >
-              + Add New Column
-            </button>
-            <button
-              onClick={() => {
-                const isValid = validate();
-                if (isValid === true) onSubmit(type);
-              }}
-              className=" w-full items-center hover:opacity-70 dark:text-white dark:bg-[#635fc7] mt-8 relative  text-white bg-[#635fc7] py-2 rounded-full"
-            >
-              {type === "add" ? "Create New Board" : "Save Changes"}
-            </button>
+        <div className="mt-4">
+          <span className="text-micro font-semibold text-dimmer">Columns</span>
+          <div className="mt-1 space-y-1.5">
+            {newColumns.map((column, index) => {
+              const invalid = !isValid && !column.name.trim();
+              return (
+                <div key={index} className="flex items-center gap-1.5">
+                  <input
+                    className={`field ${invalid ? "field-invalid" : ""}`}
+                    onChange={(e) => onChange(column.id, e.target.value)}
+                    type="text"
+                    value={column.name}
+                    aria-label={`Column ${index + 1} name`}
+                    aria-invalid={invalid}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onDelete(column.id)}
+                    aria-label={`Remove column ${column.name || index + 1}`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-soft text-dimmer
+                               transition-colors duration-150 hover:bg-danger/10 hover:text-danger"
+                  >
+                    <CrossIcon className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              );
+            })}
           </div>
+
+          <button
+            type="button"
+            className="btn-quiet mt-2 w-full"
+            onClick={() =>
+              setNewColumns((state) => [
+                ...state,
+                { name: "", tasks: [], id: uuidv4() },
+              ])
+            }
+          >
+            Add column
+          </button>
+        </div>
+
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            className="btn-quiet btn-lg"
+            onClick={() => setIsBoardModalOpen(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (validate() === true) onSubmit(type);
+            }}
+            className="btn-primary btn-lg"
+          >
+            {type === "add" ? "Create board" : "Save changes"}
+          </button>
         </div>
       </div>
     </div>

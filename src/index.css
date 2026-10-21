@@ -2,38 +2,137 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+@layer base {
+  /* ---- Theme tokens -------------------------------------------------
+     Dark is the primary theme for this tool; light is a faithful inverse
+     rather than an afterthought. Values are rgb channels so Tailwind's
+     opacity modifiers keep working. */
+  :root {
+    --canvas: 243 244 246;
+    --surface: 255 255 255;
+    --raised: 248 249 251;
+    --hairline: 226 228 233;
+    --hairline-strong: 203 207 215;
+    --fg: 20 22 26;
+    --dim: 90 97 110;
+    --dimmer: 134 141 153;
+    --accent: 79 88 224;
+    --accent-fg: 255 255 255;
+    --danger: 198 40 58;
+  }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
-    monospace;
-}
+  .dark {
+    --canvas: 14 15 19;
+    --surface: 20 22 27;
+    --raised: 26 29 35;
+    --hairline: 38 42 51;
+    --hairline-strong: 52 57 69;
+    --fg: 231 233 237;
+    --dim: 148 156 168;
+    --dimmer: 110 118 130;
+    --accent: 124 131 255;
+    --accent-fg: 12 13 17;
+    --danger: 255 122 133;
+  }
 
-@layer components {
-  .button {
-    @apply bg-[#635fc7] py-2 px-4 rounded-full text-white text-lg font-semibold hover:opacity-80 duration-200;
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    margin: 0;
+    @apply bg-canvas font-sans text-body text-fg;
+  }
+
+  /* Counts and fractions sit in columns, so they get tabular figures.
+     This is a numeral choice, not a monospace typeface. */
+  .tnum,
+  kbd {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-accent ring-offset-1 ring-offset-canvas;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--hairline-strong)) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-hairline-strong;
   }
 }
 
-.dropdown {
-  background-color: #00000080;
+@layer components {
+  /* ---- Controls ---------------------------------------------------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-soft px-3 py-1.5
+           text-label font-semibold transition-colors duration-150
+           disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-accent-fg hover:bg-accent/90;
+  }
+  .btn-quiet {
+    @apply btn border border-hairline text-fg hover:border-hairline-strong hover:bg-raised;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-white hover:bg-danger/90 dark:text-canvas;
+  }
+  .btn-lg {
+    @apply px-4 py-2 text-body;
+  }
+
+  /* ---- Fields ------------------------------------------------------ */
+  .field {
+    @apply w-full rounded-soft border border-hairline bg-surface px-2.5 py-1.5 text-body text-fg
+           transition-colors duration-150 placeholder:text-dim/80
+           hover:border-hairline-strong focus:border-accent focus:outline-none;
+  }
+  .field-invalid {
+    @apply border-danger hover:border-danger focus:border-danger;
+  }
+
+  /* ---- Keyboard hint ------------------------------------------------
+     Only rendered next to bindings that are actually wired up. */
+  .kbd {
+    @apply inline-flex h-[17px] min-w-[17px] items-center justify-center rounded-sharp border
+           border-hairline px-1 text-micro font-semibold text-dimmer;
+  }
+
+  /* ---- Overlay ------------------------------------------------------ */
+  .scrim {
+    @apply fixed inset-0 z-50 flex items-start justify-center overflow-y-auto
+           bg-black/50 px-4 py-10 backdrop-blur-[2px];
+  }
+  .panel {
+    @apply w-full max-w-[420px] rounded-soft border border-hairline bg-surface p-5;
+  }
 }
 
-.filter-white {
-  filter: invert(100%) sepia(96%) saturate(16%) hue-rotate(350deg)
-    brightness(104%) contrast(100%);
-}
-
-.select-status {
+.select-chevron {
   background-image: url("./assets/icon-chevron-down.svg");
   appearance: none;
   background-repeat: no-repeat;
-  background-position: right 16px top 50%;
+  background-position: right 10px top 50%;
+  padding-right: 28px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

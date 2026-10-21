@@ -1,92 +1,83 @@
-import React, { useState } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
-import boardIcon from "../assets/icon-board.svg";
+import BoardIcon from "./icons/BoardIcon";
+import useDarkMode from "../Hooks/useDarkMode";
 import darkIcon from "../assets/icon-dark-theme.svg";
 import lightIcon from "../assets/icon-light-theme.svg";
-import { Switch } from "@headlessui/react";
-import useDarkMode from "../Hooks/useDarkMode";
 import boardSlice from "../redux/boardSlice";
+import { useEscape } from "../Hooks/useShortcuts";
 
 function HeaderDropDown({ setOpenDropdown, setIsBoardModalOpen }) {
   const dispatch = useDispatch();
   const [colorTheme, setTheme] = useDarkMode();
-  const [darkSide, setDarkSide] = useState(
-    colorTheme === "light" ? true : false
-  );
-
-  const toggleDarkMode = (checked) => {
-    setTheme(colorTheme);
-    setDarkSide(checked);
-  };
-
   const boards = useSelector((state) => state.boards);
+
+  useEscape(() => setOpenDropdown(false));
 
   return (
     <div
-      className=" py-10 px-6 absolute  left-0 right-0 bottom-[-100vh] top-16 dropdown "
+      className="scrim items-start pt-bar"
       onClick={(e) => {
-        if (e.target !== e.currentTarget) {
-          return;
-        }
+        if (e.target !== e.currentTarget) return;
         setOpenDropdown(false);
       }}
     >
-      {/* DropDown Modal */}
+      <div className="panel p-0">
+        <h2 className="px-3 pb-1 pt-3 text-micro font-semibold text-dimmer">
+          Boards
+        </h2>
 
-      <div className=" bg-white dark:bg-[#2b2c37] shadow-md shadow-[#364e7e1a]  w-full   py-4 rounded-xl">
-        <h3 className=" dark:text-gray-300 text-gray-600 font-semibold mx-4 mb-8 ">
-          ALL BOARDS ({boards?.length})
-        </h3>
-
-        <div className=" dropdown-borad  ">
+        <nav className="pb-1">
           {boards.map((board, index) => (
-            <div
-              className={` flex items-baseline space-x-2 px-5 py-4  ${
-                board.isActive &&
-                " bg-[#635fc7] rounded-r-full text-white mr-8 "
-              } `}
+            <button
+              type="button"
               key={index}
+              aria-current={board.isActive ? "page" : undefined}
               onClick={() => {
                 dispatch(boardSlice.actions.setBoardActive({ index }));
+                setOpenDropdown(false);
               }}
+              className={`flex w-full items-center gap-2 border-l-2 px-3 py-2 text-left text-body
+                          transition-colors duration-150
+                          ${
+                            board.isActive
+                              ? "border-accent bg-accent/10 font-medium text-fg"
+                              : "border-transparent text-dim hover:bg-raised hover:text-fg"
+                          }`}
             >
-              <img src={boardIcon} className="  filter-white  h-4 " />{" "}
-              <span className=" text-lg font-bold  ">{board.name}</span>
-            </div>
+              <BoardIcon className="h-3.5 w-3.5 opacity-70" />
+              <span className="truncate">{board.name}</span>
+            </button>
           ))}
 
-          <div
+          <button
+            type="button"
             onClick={() => {
               setIsBoardModalOpen(true);
               setOpenDropdown(false);
             }}
-            className=" flex items-baseline space-x-2  text-[#635fc7] px-5 py-4  "
+            className="flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-2
+                       text-left text-body text-dimmer transition-colors duration-150
+                       hover:bg-raised hover:text-accent"
           >
-            <img src={boardIcon} className="   filter-white  h-4 " />
-            <p className=" text-lg font-bold  ">Create New Board </p>
-          </div>
+            <BoardIcon className="h-3.5 w-3.5 opacity-70" />
+            <span className="truncate">New board</span>
+          </button>
+        </nav>
 
-          <div className=" mx-2  p-4  space-x-2 bg-slate-100 dark:bg-[#20212c] flex justify-center items-center rounded-lg">
-            <img src={lightIcon} alt="sun indicating light mode" />
-
-            <Switch
-              checked={darkSide}
-              onChange={toggleDarkMode}
-              className={`${
-                darkSide ? "bg-[#635fc7]" : "bg-gray-200"
-              } relative inline-flex h-6 w-11 items-center rounded-full`}
-            >
-              <span className="sr-only">Enable notifications</span>
-              <span
-                className={`${
-                  darkSide ? "translate-x-6" : "translate-x-1"
-                } inline-block h-4 w-4 transform rounded-full bg-white transition`}
-              />
-            </Switch>
-
-            <img src={darkIcon} alt="moon indicating dark mode" />
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={() => setTheme(colorTheme)}
+          className="flex w-full items-center gap-2 border-t border-hairline px-3 py-2
+                     text-left text-label text-dim transition-colors duration-150 hover:bg-raised hover:text-fg"
+        >
+          <img
+            className="w-3.5 opacity-60"
+            src={colorTheme === "dark" ? darkIcon : lightIcon}
+            alt=""
+          />
+          <span>{colorTheme === "dark" ? "Dark theme" : "Light theme"}</span>
+        </button>
       </div>
     </div>
   );

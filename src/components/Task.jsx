@@ -5,41 +5,95 @@ import TaskModal from "../modals/TaskModal";
 function Task({ colIndex, taskIndex }) {
   const boards = useSelector((state) => state.boards);
   const board = boards.find((board) => board.isActive === true);
-  const columns = board.columns;
-  const col = columns.find((col, i) => i === colIndex);
+  const col = board.columns.find((col, i) => i === colIndex);
   const task = col.tasks.find((task, i) => i === taskIndex);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
-  let completed = 0;
-  let subtasks = task.subtasks;
-  subtasks.forEach((subtask) => {
-    if (subtask.isCompleted) {
-      completed++;
-    }
-  });
+  const subtasks = task.subtasks;
+  const completed = subtasks.filter((s) => s.isCompleted).length;
+  const total = subtasks.length;
+  const isDone = total > 0 && completed === total;
+  const progress = total === 0 ? 0 : (completed / total) * 100;
 
   const handleOnDrag = (e) => {
+    setIsDragging(true);
     e.dataTransfer.setData(
       "text",
       JSON.stringify({ taskIndex, prevColIndex: colIndex })
     );
   };
 
+  const open = () => setIsTaskModalOpen(true);
+
   return (
-    <div>
+    <>
       <div
-        onClick={() => {
-          setIsTaskModalOpen(true);
+        role="button"
+        tabIndex={0}
+        aria-label={`${task.title}. ${completed} of ${total} subtasks done.`}
+        onClick={open}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            open();
+          }
         }}
         draggable
         onDragStart={handleOnDrag}
-        className=" w-[280px] first:my-5 rounded-lg  bg-white  dark:bg-[#2b2c37] shadow-[#364e7e1a] py-6 px-3 shadow-lg hover:text-[#635fc7] dark:text-white dark:hover:text-[#635fc7] cursor-pointer "
+        onDragEnd={() => setIsDragging(false)}
+        className={`group relative w-full cursor-grab border-b border-hairline px-3 py-2.5
+                    text-left transition-colors duration-150 hover:bg-raised active:cursor-grabbing
+                    ${isDragging ? "opacity-40" : ""}`}
       >
-        <span className=" font-bold tracking-wide ">{task.title}</span>
-        <span className=" font-bold text-xs tracking-tighter mt-2 text-gray-500">
-          {completed} of {subtasks.length} Completed tasks
-        </span>
+        {/* Active work gets an accent edge on hover; finished work doesn't. */}
+        {!isDone && (
+          <span className="absolute inset-y-0 left-0 w-[2px] scale-y-0 bg-accent transition-transform duration-150 group-hover:scale-y-100" />
+        )}
+
+        <div className="flex items-start gap-2">
+          <h3
+            className={`flex-1 text-body ${
+              isDone ? "font-normal text-dim" : "font-medium text-fg"
+            }`}
+          >
+            {task.title}
+          </h3>
+
+          {isDone && (
+            <svg
+              viewBox="0 0 10 8"
+              aria-hidden="true"
+              className="mt-[6px] h-2 w-2.5 shrink-0 stroke-dim"
+              fill="none"
+              strokeWidth="2"
+            >
+              <path d="m1.276 3.066 2.756 2.756 5-5" />
+            </svg>
+          )}
+        </div>
+
+        {total > 0 && !isDone && (
+          <div className="mt-2 flex items-center gap-2">
+            <div
+              className="h-[3px] flex-1 overflow-hidden rounded-sharp bg-hairline"
+              role="progressbar"
+              aria-valuenow={completed}
+              aria-valuemin={0}
+              aria-valuemax={total}
+            >
+              <div
+                className="h-full bg-accent transition-[width] duration-200"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="tnum shrink-0 text-micro text-dim">
+              {completed}/{total}
+            </span>
+          </div>
+        )}
       </div>
+
       {isTaskModalOpen && (
         <TaskModal
           colIndex={colIndex}
@@ -47,7 +101,7 @@ function Task({ colIndex, taskIndex }) {
           setIsTaskModalOpen={setIsTaskModalOpen}
         />
       )}
-    </div>
+    </>
   );
 }
 
