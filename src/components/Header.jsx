@@ -11,6 +11,7 @@ import AddEditTaskModal from "../modals/AddEditTaskModal";
 import DeleteModal from "../modals/DeleteModal";
 import boardSlice from "../redux/boardSlice";
 import { useShortcuts } from "../Hooks/useShortcuts";
+import ClockControl from "./ClockControl";
 import useTicker from "../Hooks/useTicker";
 import { findRunningTask, taskElapsed, formatDuration } from "../utils/time";
 
@@ -118,6 +119,8 @@ function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
         )}
 
         <div className={`flex shrink-0 items-center gap-1.5 ${runningEntry ? "ml-2" : "ml-auto"}`}>
+          <ClockControl />
+
           <button
             className="btn-primary"
             onClick={() => setIsTaskModalOpen(true)}

@@ -156,6 +156,21 @@ const boardSlice = createSlice({
         )
       );
     },
+    addComment: (state, action) => {
+      const { colIndex, taskIndex, comment } = action.payload;
+      const board = state.find((board) => board.isActive);
+      const task = board.columns[colIndex]?.tasks[taskIndex];
+      if (!task) return;
+      if (!Array.isArray(task.comments)) task.comments = [];
+      task.comments.push(comment);
+    },
+    deleteComment: (state, action) => {
+      const { colIndex, taskIndex, commentId } = action.payload;
+      const board = state.find((board) => board.isActive);
+      const task = board.columns[colIndex]?.tasks[taskIndex];
+      if (!task || !Array.isArray(task.comments)) return;
+      task.comments = task.comments.filter((c) => c.id !== commentId);
+    },
     setTaskDueDate: (state, action) => {
       const { colIndex, taskIndex, dueDate } = action.payload;
       const board = state.find((board) => board.isActive);

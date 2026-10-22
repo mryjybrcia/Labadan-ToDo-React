@@ -10,6 +10,8 @@ import { useEscape } from "../Hooks/useShortcuts";
 import useTicker from "../Hooks/useTicker";
 import { taskElapsed, formatDuration, isRunning } from "../utils/time";
 import DatePicker from "../components/DatePicker";
+import Comments from "../components/Comments";
+import { deleteFiles } from "../utils/attachments";
 
 function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
   const dispatch = useDispatch();
@@ -68,6 +70,11 @@ function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
 
   const onDeleteBtnClick = (e) => {
     if (e.target.textContent === "Delete") {
+      // Drop the comment attachments with the task so no blobs are orphaned.
+      const attachmentIds = (task.comments || []).flatMap((c) =>
+        (c.attachments || []).map((a) => a.id)
+      );
+      deleteFiles(attachmentIds);
       dispatch(boardSlice.actions.deleteTask({ taskIndex, colIndex }));
       setIsTaskModalOpen(false);
       setIsDeleteModalOpen(false);
@@ -132,21 +139,39 @@ function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
           </>
         )}
 
-        <div className="mt-5">
-          <span className="text-micro font-semibold text-dimmer">Due date</span>
-          <div className="mt-1">
-            <DatePicker
-              value={task.dueDate || null}
-              onChange={(dueDate) =>
-                dispatch(
-                  boardSlice.actions.setTaskDueDate({
-                    colIndex,
-                    taskIndex,
-                    dueDate,
-                  })
-                )
-              }
-            />
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <div>
+            <label htmlFor="task-status" className="text-micro font-semibold text-dimmer">
+              Status
+            </label>
+            <select
+              id="task-status"
+              className="field select-chevron mt-1 cursor-pointer"
+              value={status}
+              onChange={onChange}
+            >
+              {columns.map((col, index) => (
+                <option key={index}>{col.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <span className="text-micro font-semibold text-dimmer">Due date</span>
+            <div className="mt-1">
+              <DatePicker
+                value={task.dueDate || null}
+                onChange={(dueDate) =>
+                  dispatch(
+                    boardSlice.actions.setTaskDueDate({
+                      colIndex,
+                      taskIndex,
+                      dueDate,
+                    })
+                  )
+                }
+              />
+            </div>
           </div>
         </div>
 
@@ -185,21 +210,12 @@ function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
           </div>
         </div>
 
-        <div className="mt-5">
-          <label htmlFor="task-status" className="text-micro font-semibold text-dimmer">
-            Status
-          </label>
-          <select
-            id="task-status"
-            className="field select-chevron mt-1 cursor-pointer"
-            value={status}
-            onChange={onChange}
-          >
-            {columns.map((col, index) => (
-              <option key={index}>{col.name}</option>
-            ))}
-          </select>
-        </div>
+
+        <Comments
+          colIndex={colIndex}
+          taskIndex={taskIndex}
+          comments={task.comments || []}
+        />
 
         <p className="mt-4 flex items-center gap-1.5 text-micro text-dimmer">
           <kbd className="kbd">Esc</kbd> to close
