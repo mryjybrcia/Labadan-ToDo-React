@@ -7,6 +7,8 @@ import Subtask from "../components/Subtask";
 import AddEditTaskModal from "./AddEditTaskModal";
 import DeleteModal from "./DeleteModal";
 import { useEscape } from "../Hooks/useShortcuts";
+import useTicker from "../Hooks/useTicker";
+import { taskElapsed, formatDuration, isRunning } from "../utils/time";
 
 function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
   const dispatch = useDispatch();
@@ -20,6 +22,19 @@ function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
   const task = col.tasks.find((task, i) => i === taskIndex);
   const subtasks = task.subtasks;
   const completed = subtasks.filter((s) => s.isCompleted).length;
+
+  const running = isRunning(task);
+  const now = useTicker(running);
+  const elapsed = taskElapsed(task, now);
+
+  const toggleTimer = () => {
+    const payload = { colIndex, taskIndex, now: Date.now() };
+    dispatch(
+      running
+        ? boardSlice.actions.stopTaskTimer(payload)
+        : boardSlice.actions.startTaskTimer(payload)
+    );
+  };
 
   const [status, setStatus] = useState(task.status);
   const [newColIndex, setNewColIndex] = useState(columns.indexOf(col));
@@ -115,6 +130,41 @@ function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
             </div>
           </>
         )}
+
+        <div className="mt-5">
+          <span className="text-micro font-semibold text-dimmer">Time</span>
+          <div className="mt-1 flex items-center gap-2 rounded-soft border border-hairline px-3 py-2">
+            <span
+              className={`tnum flex-1 text-title font-semibold ${
+                running ? "text-accent" : "text-fg"
+              }`}
+            >
+              {formatDuration(elapsed)}
+            </span>
+
+            {elapsed > 0 && !running && (
+              <button
+                type="button"
+                onClick={() =>
+                  dispatch(
+                    boardSlice.actions.resetTaskTimer({ colIndex, taskIndex })
+                  )
+                }
+                className="btn-quiet"
+              >
+                Reset
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={toggleTimer}
+              className={running ? "btn-quiet" : "btn-primary"}
+            >
+              {running ? "Stop" : "Start"}
+            </button>
+          </div>
+        </div>
 
         <div className="mt-5">
           <label htmlFor="task-status" className="text-micro font-semibold text-dimmer">

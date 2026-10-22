@@ -11,6 +11,8 @@ import AddEditTaskModal from "../modals/AddEditTaskModal";
 import DeleteModal from "../modals/DeleteModal";
 import boardSlice from "../redux/boardSlice";
 import { useShortcuts } from "../Hooks/useShortcuts";
+import useTicker from "../Hooks/useTicker";
+import { findRunningTask, taskElapsed, formatDuration } from "../utils/time";
 
 function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
   const [openDropdown, setOpenDropdown] = useState(false);
@@ -22,6 +24,10 @@ function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
   const dispatch = useDispatch();
   const boards = useSelector((state) => state.boards);
   const board = boards.find((board) => board.isActive);
+
+  // A timer left running on another board would otherwise be invisible.
+  const runningEntry = findRunningTask(boards);
+  const tickNow = useTicker(Boolean(runningEntry));
 
   const anyOverlayOpen =
     isTaskModalOpen || isBoardModalOpen || isDeleteModalOpen || openDropdown;
@@ -89,7 +95,29 @@ function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
           </button>
         </div>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        {runningEntry && (
+          <button
+            type="button"
+            onClick={() =>
+              dispatch(
+                boardSlice.actions.stopTaskTimer({ now: Date.now() })
+              )
+            }
+            title={`Stop timer on "${runningEntry.task.title}"`}
+            className="ml-auto flex min-w-0 items-center gap-2 rounded-soft border border-accent/40
+                       bg-accent/10 px-2 py-1 transition-colors duration-150 hover:bg-accent/20"
+          >
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+            <span className="tnum shrink-0 text-micro font-semibold text-accent">
+              {formatDuration(taskElapsed(runningEntry.task, tickNow))}
+            </span>
+            <span className="hidden max-w-[180px] truncate text-micro text-dim lg:inline">
+              {runningEntry.task.title}
+            </span>
+          </button>
+        )}
+
+        <div className={`flex shrink-0 items-center gap-1.5 ${runningEntry ? "ml-2" : "ml-auto"}`}>
           <button
             className="btn-primary"
             onClick={() => setIsTaskModalOpen(true)}

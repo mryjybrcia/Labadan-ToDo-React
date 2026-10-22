@@ -37,7 +37,14 @@ const boardSlice = createSlice({
     addTask: (state, action) => {
       const { title, status, description, subtasks, newColIndex } =
         action.payload;
-      const task = { title, description, subtasks, status };
+      const task = {
+        title,
+        description,
+        subtasks,
+        status,
+        timeSpent: 0,
+        startedAt: null,
+      };
       const board = state.find((board) => board.isActive);
       const column = board.columns.find((col, index) => index === newColIndex);
       column.tasks.push(task);
@@ -90,6 +97,53 @@ const boardSlice = createSlice({
       col.tasks = col.tasks.filter((task, i) => i !== payload.taskIndex);
       const newCol = columns.find((col, i) => i === payload.newColIndex);
       newCol.tasks.push(task);
+    },
+    /**
+     * Timer actions. `now` is passed in by the caller so reducers stay pure.
+     * Starting a task banks whatever was running first, so only one task can
+     * ever be running.
+     */
+    startTaskTimer: (state, action) => {
+      const { colIndex, taskIndex, now } = action.payload;
+
+      state.forEach((board) =>
+        board.columns.forEach((col) =>
+          col.tasks.forEach((task) => {
+            if (task.startedAt) {
+              task.timeSpent =
+                (task.timeSpent || 0) + Math.max(0, now - task.startedAt);
+              task.startedAt = null;
+            }
+          })
+        )
+      );
+
+      const board = state.find((board) => board.isActive);
+      const task = board.columns[colIndex]?.tasks[taskIndex];
+      if (task) task.startedAt = now;
+    },
+    stopTaskTimer: (state, action) => {
+      const now = action.payload.now;
+      state.forEach((board) =>
+        board.columns.forEach((col) =>
+          col.tasks.forEach((task) => {
+            if (task.startedAt) {
+              task.timeSpent =
+                (task.timeSpent || 0) + Math.max(0, now - task.startedAt);
+              task.startedAt = null;
+            }
+          })
+        )
+      );
+    },
+    resetTaskTimer: (state, action) => {
+      const { colIndex, taskIndex } = action.payload;
+      const board = state.find((board) => board.isActive);
+      const task = board.columns[colIndex]?.tasks[taskIndex];
+      if (task) {
+        task.timeSpent = 0;
+        task.startedAt = null;
+      }
     },
     deleteTask: (state, action) => {
       const payload = action.payload;

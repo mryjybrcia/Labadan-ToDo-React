@@ -1,8 +1,12 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import TaskModal from "../modals/TaskModal";
+import boardSlice from "../redux/boardSlice";
+import useTicker from "../Hooks/useTicker";
+import { taskElapsed, formatDuration, isRunning } from "../utils/time";
 
 function Task({ colIndex, taskIndex }) {
+  const dispatch = useDispatch();
   const boards = useSelector((state) => state.boards);
   const board = boards.find((board) => board.isActive === true);
   const col = board.columns.find((col, i) => i === colIndex);
@@ -16,11 +20,25 @@ function Task({ colIndex, taskIndex }) {
   const isDone = total > 0 && completed === total;
   const progress = total === 0 ? 0 : (completed / total) * 100;
 
+  const running = isRunning(task);
+  const now = useTicker(running);
+  const elapsed = taskElapsed(task, now);
+
   const handleOnDrag = (e) => {
     setIsDragging(true);
     e.dataTransfer.setData(
       "text",
       JSON.stringify({ taskIndex, prevColIndex: colIndex })
+    );
+  };
+
+  const toggleTimer = (e) => {
+    e.stopPropagation();
+    const payload = { colIndex, taskIndex, now: Date.now() };
+    dispatch(
+      running
+        ? boardSlice.actions.stopTaskTimer(payload)
+        : boardSlice.actions.startTaskTimer(payload)
     );
   };
 
@@ -31,7 +49,9 @@ function Task({ colIndex, taskIndex }) {
       <div
         role="button"
         tabIndex={0}
-        aria-label={`${task.title}. ${completed} of ${total} subtasks done.`}
+        aria-label={`${task.title}. ${completed} of ${total} subtasks done.${
+          elapsed > 0 ? ` ${formatDuration(elapsed)} tracked.` : ""
+        }`}
         onClick={open}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
@@ -46,21 +66,59 @@ function Task({ colIndex, taskIndex }) {
                     text-left transition-colors duration-150 hover:bg-raised active:cursor-grabbing
                     ${isDragging ? "opacity-40" : ""}`}
       >
-        {/* Active work gets an accent edge on hover; finished work doesn't. */}
-        {!isDone && (
-          <span className="absolute inset-y-0 left-0 w-[2px] scale-y-0 bg-accent transition-transform duration-150 group-hover:scale-y-100" />
-        )}
+        {/* A running task keeps the accent edge pinned, not just on hover. */}
+        <span
+          className={`absolute inset-y-0 left-0 w-[2px] bg-accent transition-transform duration-150
+                      ${
+                        running
+                          ? "scale-y-100"
+                          : isDone
+                          ? "scale-y-0"
+                          : "scale-y-0 group-hover:scale-y-100"
+                      }`}
+        />
 
         <div className="flex items-start gap-2">
           <h3
             className={`flex-1 text-body ${
-              isDone ? "font-normal text-dim" : "font-medium text-fg"
+              isDone && !running ? "font-normal text-dim" : "font-medium text-fg"
             }`}
           >
             {task.title}
           </h3>
 
-          {isDone && (
+          {/* Elapsed time: always visible once there is any, live while running. */}
+          {elapsed > 0 && (
+            <span
+              className={`tnum mt-[2px] shrink-0 text-micro ${
+                running ? "text-accent" : "text-dimmer"
+              }`}
+            >
+              {formatDuration(elapsed)}
+            </span>
+          )}
+
+          <button
+            type="button"
+            onClick={toggleTimer}
+            aria-label={running ? `Stop timer` : `Start timer`}
+            title={running ? "Stop timer" : "Start timer"}
+            className={`mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-sharp
+                        transition-opacity duration-150 hover:bg-accent/20
+                        ${running ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"}`}
+          >
+            {running ? (
+              <svg viewBox="0 0 10 10" className="h-2 w-2 fill-accent" aria-hidden="true">
+                <rect x="0" y="0" width="10" height="10" rx="1.5" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 10 10" className="h-2.5 w-2.5 fill-dim" aria-hidden="true">
+                <path d="M1.5 0.6 9 5 1.5 9.4Z" />
+              </svg>
+            )}
+          </button>
+
+          {isDone && !running && (
             <svg
               viewBox="0 0 10 8"
               aria-hidden="true"
