@@ -1,17 +1,25 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
 import AddEditBoardModal from "../modals/AddEditBoardModal";
-import Column from "./Column";
-import EmptyBoard from "./EmptyBoard";
+import AddEditTaskModal from "../modals/AddEditTaskModal";
+import Agenda from "./Agenda";
 import Sidebar from "./Sidebar";
+import { useSelector } from "react-redux";
+import { VIEWS, viewCounts } from "../utils/agenda";
 
 function Home() {
   const [isBoardModalOpen, setIsBoardModalOpen] = useState(false);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [isSideBarOpen, setIsSideBarOpen] = useState(true);
-
   const boards = useSelector((state) => state.boards);
-  const board = boards.find((board) => board.isActive === true);
-  const columns = board.columns;
+  const activeBoard = boards.find((b) => b.isActive === true);
+
+  // Land on Today, unless nothing is due - a first visit with no due dates
+  // would otherwise open on an empty screen and read as broken.
+  const [view, setView] = useState(() => {
+    const counts = viewCounts(activeBoard);
+    return counts.today > 0 || counts.all === 0 ? "today" : "all";
+  });
+
 
   return (
     <div className="h-screen bg-canvas pt-bar">
@@ -19,42 +27,47 @@ function Home() {
         <Sidebar
           isSideBarOpen={isSideBarOpen}
           setIsSideBarOpen={setIsSideBarOpen}
+          view={view}
+          setView={setView}
         />
       </div>
 
       <div
-        className={`h-full overflow-x-auto overflow-y-hidden transition-[padding] duration-200
+        className={`h-full overflow-y-auto transition-[padding] duration-200
                     ${isSideBarOpen ? "md:pl-rooms" : "md:pl-9"}`}
       >
-        {columns.length > 0 ? (
-          <div className="flex h-full min-w-full border-l border-hairline">
-            {columns.map((col, index) => (
-              <Column key={index} colIndex={index} />
+        {/* A readable measure rather than edge-to-edge: this is a list to read
+            top to bottom, not a surface to scan sideways. */}
+        <div className="mx-auto min-h-full max-w-3xl border-hairline md:border-x">
+          {/* View switcher for small screens, where the sidebar is hidden. */}
+          <div className="flex gap-1 overflow-x-auto border-b border-hairline px-3 py-2 md:hidden">
+            {Object.entries(VIEWS).map(([key, v]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setView(key)}
+                aria-current={view === key ? "page" : undefined}
+                className={`shrink-0 rounded-full px-3 py-1 text-label font-medium transition-colors
+                            ${
+                              view === key
+                                ? "bg-accent text-accent-fg"
+                                : "text-dim hover:bg-raised hover:text-fg"
+                            }`}
+              >
+                {v.label}
+              </button>
             ))}
-
-            {/* A quiet rail rather than a large dashed placeholder: it should
-                read as "there is room for another column", not compete with
-                the columns that hold real work. */}
-            <button
-              type="button"
-              onClick={() => setIsBoardModalOpen(true)}
-              className="group flex h-full w-[150px] shrink-0 items-start justify-center
-                         border-r border-hairline pt-2.5 text-label font-medium text-dimmer
-                         transition-colors duration-150 hover:bg-raised hover:text-accent"
-            >
-              + New column
-            </button>
           </div>
-        ) : (
-          <EmptyBoard type="edit" />
-        )}
+
+          <Agenda view={view} onNewTask={() => setIsTaskModalOpen(true)} />
+        </div>
       </div>
 
       {isBoardModalOpen && (
-        <AddEditBoardModal
-          type="edit"
-          setIsBoardModalOpen={setIsBoardModalOpen}
-        />
+        <AddEditBoardModal type="edit" setIsBoardModalOpen={setIsBoardModalOpen} />
+      )}
+      {isTaskModalOpen && (
+        <AddEditTaskModal setIsAddTaskModalOpen={setIsTaskModalOpen} type="add" />
       )}
     </div>
   );

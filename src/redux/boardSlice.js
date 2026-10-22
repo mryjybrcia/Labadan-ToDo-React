@@ -171,6 +171,32 @@ const boardSlice = createSlice({
       if (!task || !Array.isArray(task.comments)) return;
       task.comments = task.comments.filter((c) => c.id !== commentId);
     },
+    toggleTaskComplete: (state, action) => {
+      const { colIndex, taskIndex, now } = action.payload;
+      const board = state.find((board) => board.isActive);
+      const task = board.columns[colIndex]?.tasks[taskIndex];
+      if (!task) return;
+
+      const allSubtasksDone =
+        (task.subtasks || []).length > 0 &&
+        task.subtasks.every((s) => s.isCompleted);
+
+      if (task.completedAt || allSubtasksDone) {
+        // Un-completing also clears the subtasks, otherwise the task would
+        // immediately read as done again.
+        task.completedAt = null;
+        (task.subtasks || []).forEach((s) => {
+          s.isCompleted = false;
+        });
+      } else {
+        task.completedAt = now;
+        // Stop the clock: finished work shouldn't keep accruing time.
+        if (task.startedAt) {
+          task.timeSpent = (task.timeSpent || 0) + Math.max(0, now - task.startedAt);
+          task.startedAt = null;
+        }
+      }
+    },
     setTaskDueDate: (state, action) => {
       const { colIndex, taskIndex, dueDate } = action.payload;
       const board = state.find((board) => board.isActive);
