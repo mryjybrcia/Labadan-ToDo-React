@@ -29,6 +29,19 @@ export function formatDuration(ms) {
     : `${minutes}:${pad(seconds)}`;
 }
 
+/**
+ * Compact form for banked time: "47m", "3h 12m", "5h".
+ * A running clock uses formatDuration instead, which ticks to the second.
+ */
+export function formatCompact(ms) {
+  const minutes = Math.floor(ms / 60000);
+  if (minutes < 1) return "<1m";
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest}m`;
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
+}
+
 /** Locate the running task across every board, or null. */
 export function findRunningTask(boards) {
   for (let b = 0; b < boards.length; b++) {

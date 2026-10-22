@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import boardSlice from "../redux/boardSlice";
 import Task from "./Task";
+import { dueState } from "../utils/date";
 
 function Column({ colIndex }) {
   const dispatch = useDispatch();
@@ -9,6 +10,13 @@ function Column({ colIndex }) {
   const boards = useSelector((state) => state.boards);
   const board = boards.find((board) => board.isActive === true);
   const col = board.columns.find((col, i) => i === colIndex);
+
+  // Only open work counts as late; a finished task's due date is history.
+  const overdue = col.tasks.filter((task) => {
+    const total = task.subtasks.length;
+    const done = total > 0 && task.subtasks.every((s) => s.isCompleted);
+    return !done && task.dueDate && dueState(task.dueDate) === "overdue";
+  }).length;
 
   const handleOnDrop = (e) => {
     setIsDropTarget(false);
@@ -38,7 +46,7 @@ function Column({ colIndex }) {
       onDragOver={handleOnDragOver}
       onDragLeave={handleOnDragLeave}
       aria-label={`${col.name}, ${col.tasks.length} tasks`}
-      className={`flex h-full w-rail shrink-0 flex-col border-r border-hairline
+      className={`flex h-full min-w-[300px] max-w-[460px] flex-1 flex-col border-r border-hairline
                   transition-colors duration-150
                   ${isDropTarget ? "bg-accent/[0.07]" : ""}`}
     >
@@ -46,7 +54,14 @@ function Column({ colIndex }) {
         <h2 className="truncate text-label font-semibold text-fg">
           {col.name}
         </h2>
-        <span className="tnum ml-auto shrink-0 text-micro text-dim">
+        {overdue > 0 && (
+          <span className="tnum ml-auto shrink-0 text-micro font-medium text-danger">
+            {overdue} late
+          </span>
+        )}
+        <span
+          className={`tnum shrink-0 text-micro text-dim ${overdue > 0 ? "ml-3" : "ml-auto"}`}
+        >
           {col.tasks.length}
         </span>
       </header>

@@ -27,7 +27,7 @@ function Home() {
                     ${isSideBarOpen ? "md:pl-rooms" : "md:pl-9"}`}
       >
         {columns.length > 0 ? (
-          <div className="flex h-full border-l border-hairline">
+          <div className="flex h-full min-w-full border-l border-hairline">
             {columns.map((col, index) => (
               <Column key={index} colIndex={index} />
             ))}
@@ -39,7 +39,7 @@ function Home() {
               type="button"
               onClick={() => setIsBoardModalOpen(true)}
               className="group flex h-full w-[150px] shrink-0 items-start justify-center
-                         pt-2.5 text-label font-medium text-dimmer
+                         border-r border-hairline pt-2.5 text-label font-medium text-dimmer
                          transition-colors duration-150 hover:bg-raised hover:text-accent"
             >
               + New column
