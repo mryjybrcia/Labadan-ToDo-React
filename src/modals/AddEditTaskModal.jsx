@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { v4 as uuidv4 } from "uuid";
 import CrossIcon from "../components/icons/CrossIcon";
 import { useEscape } from "../Hooks/useShortcuts";
+import DatePicker from "../components/DatePicker";
 import boardSlice from "../redux/boardSlice";
 
 function AddEditTaskModal({
@@ -18,6 +19,7 @@ function AddEditTaskModal({
   const [isValid, setIsValid] = useState(true);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState(null);
   const board = useSelector((state) => state.boards).find(
     (board) => board.isActive
   );
@@ -62,6 +64,7 @@ function AddEditTaskModal({
     );
     setTitle(task.title);
     setDescription(task.description);
+    setDueDate(task.dueDate || null);
     setIsFirstLoad(false);
   }
 
@@ -78,6 +81,8 @@ function AddEditTaskModal({
           subtasks,
           status,
           newColIndex,
+          dueDate,
+          now: Date.now(),
         })
       );
     } else {
@@ -90,6 +95,7 @@ function AddEditTaskModal({
           taskIndex,
           prevColIndex,
           newColIndex,
+          dueDate,
         })
       );
     }
@@ -187,20 +193,32 @@ function AddEditTaskModal({
           </button>
         </div>
 
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <div>
+            <label htmlFor="task-status-input" className="text-micro font-semibold text-dimmer">
+              Status
+            </label>
+            <select
+              id="task-status-input"
+              value={status}
+              onChange={onChangeStatus}
+              className="field select-chevron mt-1 cursor-pointer"
+            >
+              {columns.map((column, index) => (
+                <option key={index}>{column.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <span className="text-micro font-semibold text-dimmer">Due date</span>
+            <div className="mt-1">
+              <DatePicker value={dueDate} onChange={setDueDate} />
+            </div>
+          </div>
+        </div>
+
         <div className="mt-4">
-          <label htmlFor="task-status-input" className="text-micro font-semibold text-dimmer">
-            Status
-          </label>
-          <select
-            id="task-status-input"
-            value={status}
-            onChange={onChangeStatus}
-            className="field select-chevron mt-1 cursor-pointer"
-          >
-            {columns.map((column, index) => (
-              <option key={index}>{column.name}</option>
-            ))}
-          </select>
         </div>
 
         <div className="mt-5 flex justify-end gap-2">

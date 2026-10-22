@@ -9,6 +9,7 @@ import DeleteModal from "./DeleteModal";
 import { useEscape } from "../Hooks/useShortcuts";
 import useTicker from "../Hooks/useTicker";
 import { taskElapsed, formatDuration, isRunning } from "../utils/time";
+import DatePicker from "../components/DatePicker";
 
 function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
   const dispatch = useDispatch();
@@ -132,6 +133,24 @@ function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
         )}
 
         <div className="mt-5">
+          <span className="text-micro font-semibold text-dimmer">Due date</span>
+          <div className="mt-1">
+            <DatePicker
+              value={task.dueDate || null}
+              onChange={(dueDate) =>
+                dispatch(
+                  boardSlice.actions.setTaskDueDate({
+                    colIndex,
+                    taskIndex,
+                    dueDate,
+                  })
+                )
+              }
+            />
+          </div>
+        </div>
+
+        <div className="mt-5">
           <span className="text-micro font-semibold text-dimmer">Time</span>
           <div className="mt-1 flex items-center gap-2 rounded-soft border border-hairline px-3 py-2">
             <span
@@ -161,7 +180,7 @@ function TaskModal({ taskIndex, colIndex, setIsTaskModalOpen }) {
               onClick={toggleTimer}
               className={running ? "btn-quiet" : "btn-primary"}
             >
-              {running ? "Stop" : "Start"}
+              {running ? "Pause" : task.timeSpent ? "Resume" : "Start"}
             </button>
           </div>
         </div>

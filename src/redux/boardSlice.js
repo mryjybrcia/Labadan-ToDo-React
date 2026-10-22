@@ -35,15 +35,33 @@ const boardSlice = createSlice({
       });
     },
     addTask: (state, action) => {
-      const { title, status, description, subtasks, newColIndex } =
+      const { title, status, description, subtasks, newColIndex, dueDate, now } =
         action.payload;
+
+      // A new task starts its own clock, so creating one banks whatever was
+      // already running - only one task is ever on the clock.
+      if (now) {
+        state.forEach((board) =>
+          board.columns.forEach((col) =>
+            col.tasks.forEach((task) => {
+              if (task.startedAt) {
+                task.timeSpent =
+                  (task.timeSpent || 0) + Math.max(0, now - task.startedAt);
+                task.startedAt = null;
+              }
+            })
+          )
+        );
+      }
+
       const task = {
         title,
         description,
         subtasks,
         status,
+        dueDate: dueDate || null,
         timeSpent: 0,
-        startedAt: null,
+        startedAt: now || null,
       };
       const board = state.find((board) => board.isActive);
       const column = board.columns.find((col, index) => index === newColIndex);
@@ -58,6 +76,7 @@ const boardSlice = createSlice({
         prevColIndex,
         newColIndex,
         taskIndex,
+        dueDate,
       } = action.payload;
       const board = state.find((board) => board.isActive);
       const column = board.columns.find((col, index) => index === prevColIndex);
@@ -66,6 +85,7 @@ const boardSlice = createSlice({
       task.status = status;
       task.description = description;
       task.subtasks = subtasks;
+      task.dueDate = dueDate || null;
       if (prevColIndex === newColIndex) return;
       column.tasks = column.tasks.filter((task, index) => index !== taskIndex);
       const newCol = board.columns.find((col, index) => index === newColIndex);
@@ -135,6 +155,12 @@ const boardSlice = createSlice({
           })
         )
       );
+    },
+    setTaskDueDate: (state, action) => {
+      const { colIndex, taskIndex, dueDate } = action.payload;
+      const board = state.find((board) => board.isActive);
+      const task = board.columns[colIndex]?.tasks[taskIndex];
+      if (task) task.dueDate = dueDate || null;
     },
     resetTaskTimer: (state, action) => {
       const { colIndex, taskIndex } = action.payload;

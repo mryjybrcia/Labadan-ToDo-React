@@ -4,6 +4,7 @@ import TaskModal from "../modals/TaskModal";
 import boardSlice from "../redux/boardSlice";
 import useTicker from "../Hooks/useTicker";
 import { taskElapsed, formatDuration, isRunning } from "../utils/time";
+import { formatDueLabel, dueState } from "../utils/date";
 
 function Task({ colIndex, taskIndex }) {
   const dispatch = useDispatch();
@@ -19,6 +20,15 @@ function Task({ colIndex, taskIndex }) {
   const total = subtasks.length;
   const isDone = total > 0 && completed === total;
   const progress = total === 0 ? 0 : (completed / total) * 100;
+
+  const dueLabel = task.dueDate ? formatDueLabel(task.dueDate) : null;
+  const due = task.dueDate ? dueState(task.dueDate) : null;
+  const dueClass =
+    due === "overdue"
+      ? "text-danger"
+      : due === "today"
+      ? "text-accent"
+      : "text-dimmer";
 
   const running = isRunning(task);
   const now = useTicker(running);
@@ -101,8 +111,20 @@ function Task({ colIndex, taskIndex }) {
           <button
             type="button"
             onClick={toggleTimer}
-            aria-label={running ? `Stop timer` : `Start timer`}
-            title={running ? "Stop timer" : "Start timer"}
+            aria-label={
+              running
+                ? "Pause timer"
+                : task.timeSpent
+                ? "Resume timer"
+                : "Start timer"
+            }
+            title={
+              running
+                ? "Pause timer"
+                : task.timeSpent
+                ? "Resume timer"
+                : "Start timer"
+            }
             className={`mt-[1px] flex h-4 w-4 shrink-0 items-center justify-center rounded-sharp
                         transition-opacity duration-150 hover:bg-accent/20
                         ${running ? "opacity-100" : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100"}`}
@@ -131,23 +153,36 @@ function Task({ colIndex, taskIndex }) {
           )}
         </div>
 
-        {total > 0 && !isDone && (
+        {((total > 0 && !isDone) || dueLabel) && (
           <div className="mt-2 flex items-center gap-2">
-            <div
-              className="h-[3px] flex-1 overflow-hidden rounded-sharp bg-hairline"
-              role="progressbar"
-              aria-valuenow={completed}
-              aria-valuemin={0}
-              aria-valuemax={total}
-            >
+            {total > 0 && !isDone ? (
               <div
-                className="h-full bg-accent transition-[width] duration-200"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span className="tnum shrink-0 text-micro text-dim">
-              {completed}/{total}
-            </span>
+                className="h-[3px] flex-1 overflow-hidden rounded-sharp bg-hairline"
+                role="progressbar"
+                aria-valuenow={completed}
+                aria-valuemin={0}
+                aria-valuemax={total}
+              >
+                <div
+                  className="h-full bg-accent transition-[width] duration-200"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            ) : (
+              <span className="flex-1" />
+            )}
+
+            {dueLabel && (
+              <span className={`shrink-0 text-micro ${isDone ? "text-dimmer" : dueClass}`}>
+                {dueLabel}
+              </span>
+            )}
+
+            {total > 0 && !isDone && (
+              <span className="tnum shrink-0 text-micro text-dim">
+                {completed}/{total}
+              </span>
+            )}
           </div>
         )}
       </div>

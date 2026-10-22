@@ -103,7 +103,7 @@ function Header({ setIsBoardModalOpen, isBoardModalOpen }) {
                 boardSlice.actions.stopTaskTimer({ now: Date.now() })
               )
             }
-            title={`Stop timer on "${runningEntry.task.title}"`}
+            title={`Pause timer on "${runningEntry.task.title}"`}
             className="ml-auto flex min-w-0 items-center gap-2 rounded-soft border border-accent/40
                        bg-accent/10 px-2 py-1 transition-colors duration-150 hover:bg-accent/20"
           >
